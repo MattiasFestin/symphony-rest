@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<jslint>
+<file name="src/main.js">
+  
+  <issue
+    line="70"
+    char="method"
+    evidence="method is too complicated"
+    reason="Cyclomatic: 5,
+    Halstead: 10.909
+    | Effort: 4440.0
+    | Volume: 407.00
+    | Vocabulary: 34" />
+  
+</file>
+</jslint>

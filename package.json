@@ -1,0 +1,46 @@
+{
+  "name": "symphony-rest",
+  "version": "0.1.0",
+  "description": "A rest http module.",
+  "main": "./src/main.js",
+  "engineStrict": true,
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "JSONStream": "^0.8.3",
+    "lodash": "^2.4.1",
+    "q": "^1.0.1",
+    "symphony-http": "^0.x.0",
+    "symphony-injector": "^0.x.0",
+    "url-pattern": "^0.6.0"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-complexity": "~0.1.4",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-copy": "~0.5.0",
+    "grunt-contrib-jshint": "~0.9.2",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-devtools": "~0.2.1",
+    "grunt-istanbul": "~0.2.3",
+    "grunt-istanbul-coverage": "~0.0.5",
+    "grunt-simple-mocha": "~0.4.0",
+    "mocha": "~1.18.2",
+    "request": "^2.36.0",
+    "should": "~3.2.0",
+    "spec": "~1.0.0"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MattiasFestin/symphony-http.git"
+  },
+  "keywords": [
+    "http rest"
+  ],
+  "author": "Mattias Festin",
+  "license": "MIT"
+}
