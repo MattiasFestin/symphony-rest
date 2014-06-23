@@ -151,6 +151,8 @@ module.exports = function (webServer) {
 				}
 			});
 		});
+
+		return this;
 	};
 
 	return server;
