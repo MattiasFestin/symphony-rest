@@ -139,7 +139,7 @@ module.exports = function (webServer) {
 							.then(function (data) {
 								dup.end(JSON.stringify(data));
 							})
-							.catch($err);
+							.catch($err(dup));
 						} else {
 							try {
 								dup.end(JSON.stringify(retVal));
