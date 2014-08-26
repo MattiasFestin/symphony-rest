@@ -39,23 +39,51 @@ module.exports = function (webServer) {
 						$dup.statusCode = err.code || 500;
 						$dup.end('{"code": ' + $dup.statusCode + ', "msg": "'  + (err.msg || http.STATUS_CODES[$dup.statusCode]) + '"}');
 					}
+
+					if ($dup.statusCode === 500) {	
+						console.log(err.trace);
+					}
+
+					//throw err;
 				}
 				
-				$inject.remove('$err');
-				$inject.remove('$locals');
+				//$inject.remove('$err');
+				//$inject.remove('$locals');
 			};
 		},
-		$auth = function ($dup, $body) {
+		$auth = function ($dup) {
 			return function (fn, callback) {
-				var userid = auth.authHMAC($dup)(fn);
-				if (!userid) {
-					if (!server.checkHeaders($dup)) {
-						$dup.statusCode = 401;
-						$dup.end('{"code": 401, "msg": "' + http.STATUS_CODES[401] + '"}');
-					}
+				var userObj = auth.getUserObj($dup),
+					retVal,
+					e;
+
+				if (!userObj || !userObj.id) {
+					//User object is missing
+					e = new Error(http.STATUS_CODES[401] + '\nUserObj is invalid in authorization header.');
+					e.code = 401;
+					throw e; 
 				}
-				
-				return userid;
+
+				retVal = fn(userObj.id);
+
+				if (!$q.isPromise(retVal)) {
+					retVal = $q(retVal);
+				}
+
+				return retVal.then(function (secret) {
+					var userId = auth.authHMAC($dup)(secret);
+
+					if (!server.checkHeaders($dup)) {
+						if (userId) {
+							return userId;
+						} else {
+							//Throw error user does not exist
+							e = new Error(http.STATUS_CODES[401]);
+							e.code = 401;
+							throw e;
+						}
+					}
+				});
 			};
 		};
 
@@ -65,10 +93,18 @@ module.exports = function (webServer) {
 	$inject.service('$q', $q);
 	$inject.service('_', _);
 
+	//Register HTTP methods
+	_.forEach(server.headers, function (v, k) {
+		k = k.toLowerCase();
+		server[k] = server.method.bind(server, k);
+	});
+
 	server.requestHandler = function (req, res) {
 		var dup = httpDuplex(req, res),
 			url = urlParse(req.url, true),
 			method = req.method.toUpperCase();
+
+		console.log(url, method);
 
 		_.forEach(server.headers, function (v, k) {
 			dup.setHeader(k, v);
@@ -115,39 +151,50 @@ module.exports = function (webServer) {
 				}
 			});
 			dup.on('end', function (data) {
-				var body = streamData.length > 0 ? JSON.parse(streamData) : {},
-					retVal = $inject.inject(callback,
-						_.merge(urlParams, body, query, {
-						'$dup': dup ,
-						'$err': $err(dup),
-						'$auth': $auth(dup, $body),
-						'$body': $body
-					}));
+				try {
+					$inject.remove('$locals');
+					$inject.remove('$dup');
+					$inject.remove('$err');
+					$inject.remove('$auth');
+					$inject.remove('$body');
+					var body = streamData.length > 0 ? JSON.parse(streamData) : {},
+						retVal = $inject.inject(callback,
+							_.merge(urlParams, body, query, {
+							'$dup': dup ,
+							'$err': $err(dup),
+							'$auth': $auth(dup),
+							'$body': $body
+						}));
 
-				if (!server.checkHeaders(dup, true)) {
-					if (!retVal) {
-						//No data
-						dup.end();
-					} else if (retVal.Readable) {
-						//Is stream
-						retVal.pipe(dup);
-					} else if (typeof retVal === 'string' || retVal instanceof Buffer) {
-						dup.end(retVal);
-					} else if (typeof retVal === 'object') {
-						if ($q.isPromise(retVal)) {
-							retVal
-							.then(function (data) {
-								dup.end(JSON.stringify(data));
-							})
-							.catch($err(dup));
-						} else {
-							try {
-								dup.end(JSON.stringify(retVal));
-							} catch (e) {
-								$err(e);
+					if (!server.checkHeaders(dup, true)) {
+						if (!retVal) {
+							//No data
+							dup.end();
+						} else if (retVal.Readable) {
+							//Is stream
+							retVal.pipe(dup);
+						} else if (typeof retVal === 'string' || retVal instanceof Buffer) {
+							dup.end(retVal);
+						} else if (typeof retVal === 'object') {
+							if ($q.isPromise(retVal)) {
+								retVal
+								.then(function (data) {
+									dup.end(JSON.stringify(data));
+								})
+								.catch(function (e) {
+									$err(dup)(e);
+								});
+							} else {
+								try {
+									dup.end(JSON.stringify(retVal));
+								} catch (e) {
+									$err(dup)(e);
+								}
 							}
 						}
 					}
+				} catch (e) {
+					$err(dup)(e);
 				}
 			});
 		});
