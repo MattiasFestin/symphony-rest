@@ -198,5 +198,9 @@ module.exports = function (webServer) {
 		return this;
 	};
 
+	this.methods.forEach(function (m) {
+		server.method.bind(server, m);
+	});
+
 	return server;
 };
