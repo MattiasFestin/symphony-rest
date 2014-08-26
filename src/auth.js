@@ -33,22 +33,13 @@ var getUserObj = function getUserObj ($dup) {
 		auth;
 
 	if ($dup.headers.authorization) {
-		//if ($dup.headers.authorization) {
-			auth = $dup.headers.authorization.split('HMACSHA256');
-		//} else {
-		//	auth =  $dup.headers['x-authorization-1'].split('HMACSHA256');
-		//	auth += $dup.headers['x-authorization-2'];
-		//	auth += $dup.headers['x-authorization-3'];
-		//	auth += $dup.headers['x-authorization-4'];
-		//}
+		auth = $dup.headers.authorization.split('HMACSHA256');
 		
 		if (auth.length > 1) {
 			auth = auth[1].trim();
 			retObj = JSON.parse(new Buffer(auth, 'base64').toString('ascii'));
 		}
 	}
-
-	console.log(retObj);
 
 	return retObj;
 };
@@ -67,26 +58,14 @@ var authHMAC = function authHMAC($dup) {
 	return function (fetchUserById) {
 		var authObj = getUserObj($dup);
 	
-		console.log('------------------------');
-	
 		var timestamp = authObj.timestamp;
-		console.log(timestamp, Date.now(), Math.abs(Date.now() - timestamp));
 		if (Math.abs(Date.now() - timestamp) > timeout) {
 			//Request is to old
-			console.error('OLD REQUEST!!!');
 			return false;
 		}
 
 		var challange = authObj.hash;
 		var secret = fetchUserById(authObj.id);
-
-		console.log('RAW: ', secret, {
-                        method: $dup.method,
-                        timestamp: timestamp,
-                        id: authObj.id,
-                        url: $dup.url
-                });
-		console.log('challange: ', challange);
 
 		var answer = createHMAC(secret)({
 			method: $dup.method,
@@ -94,8 +73,6 @@ var authHMAC = function authHMAC($dup) {
 			id: authObj.id,
 			url: $dup.url
 		}, $dup);
-
-		console.log('answer: ', answer);
 
 		return challange === answer ? authObj.id : false;
 	};

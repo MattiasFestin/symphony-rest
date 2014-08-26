@@ -32,6 +32,9 @@ module.exports = function (webServer) {
 				} else  {
 					err = args[0];
 				}
+
+				console.trace();
+				console.log('----------------------');
 				
 				if (err) {
 					console.error('Error', err);
@@ -40,15 +43,10 @@ module.exports = function (webServer) {
 						$dup.end('{"code": ' + $dup.statusCode + ', "msg": "'  + (err.msg || http.STATUS_CODES[$dup.statusCode]) + '"}');
 					}
 
-					if ($dup.statusCode === 500) {	
+					if ($dup.statusCode === 500) {
 						console.log(err.trace);
 					}
-
-					//throw err;
 				}
-				
-				//$inject.remove('$err');
-				//$inject.remove('$locals');
 			};
 		},
 		$auth = function ($dup) {
@@ -61,7 +59,7 @@ module.exports = function (webServer) {
 					//User object is missing
 					e = new Error(http.STATUS_CODES[401] + '\nUserObj is invalid in authorization header.');
 					e.code = 401;
-					throw e; 
+					throw e;
 				}
 
 				retVal = fn(userObj.id);
@@ -103,8 +101,6 @@ module.exports = function (webServer) {
 		var dup = httpDuplex(req, res),
 			url = urlParse(req.url, true),
 			method = req.method.toUpperCase();
-
-		console.log(url, method);
 
 		_.forEach(server.headers, function (v, k) {
 			dup.setHeader(k, v);

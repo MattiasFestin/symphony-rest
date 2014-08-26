@@ -2,7 +2,7 @@
 
 var should = require('should');
 
-var symHttp = require('../coverage/src/main'),
+var symHttp = require('../../src/main'),
 	http = require('http'),
 	request = require('request'),
 	symServer;
