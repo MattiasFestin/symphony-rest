@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "JSONStream": "^0.8.3",
+    "bluebird": "^2.3.2",
     "lodash": "^2.4.1",
-    "q": "^1.0.1",
     "symphony-http": "^0.x.0",
     "symphony-injector": "^0.x.0",
     "url-pattern": "^0.6.0"

@@ -8,7 +8,7 @@ var symHttp = require('symphony-http'),
 	urlPattern = require('url-pattern'),
 	symInject = require('symphony-injector'),
 	JSONStream = require('JSONStream'),
-	$q = require('q'),
+	$bluebird = require('bluebird'),
 	auth = require('./auth');
 
 
@@ -33,9 +33,6 @@ module.exports = function (webServer) {
 					err = args[0];
 				}
 
-				console.trace();
-				console.log('----------------------');
-				
 				if (err) {
 					console.error('Error', err);
 					if (!server.checkHeaders($dup)) {
@@ -64,8 +61,10 @@ module.exports = function (webServer) {
 
 				retVal = fn(userObj.id);
 
-				if (!$q.isPromise(retVal)) {
-					retVal = $q(retVal);
+				if (!retVal || typeof retVal.then !== 'function') {
+					retVal = $bluebird(function (reject, resolve) {
+						resolve(retVal);
+					});
 				}
 
 				return retVal.then(function (secret) {
@@ -88,7 +87,7 @@ module.exports = function (webServer) {
 	server.$inject = $inject;
 	server.checkHeaders = checkHeaders;
 
-	$inject.service('$q', $q);
+	$inject.service('$bluebird', $bluebird);
 	$inject.service('_', _);
 
 	//Register HTTP methods
@@ -172,7 +171,7 @@ module.exports = function (webServer) {
 						} else if (typeof retVal === 'string' || retVal instanceof Buffer) {
 							dup.end(retVal);
 						} else if (typeof retVal === 'object') {
-							if ($q.isPromise(retVal)) {
+							if (retVal && typeof retVal.then) {
 								retVal
 								.then(function (data) {
 									dup.end(JSON.stringify(data));
@@ -198,8 +197,8 @@ module.exports = function (webServer) {
 		return this;
 	};
 
-	this.methods.forEach(function (m) {
-		server.method.bind(server, m);
+	server.methods.forEach(function (m) {
+		server[m.toLowerCase()] = server.method.bind(server, m);
 	});
 
 	return server;
